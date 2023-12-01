@@ -3,26 +3,26 @@ import json
 from astexport import parse, export
 from Types.Label import Label
 from Types.Pattern import Pattern
+from Types.Type import Type
 
 '''
 Expressions
   (DONE) Constant
   (DONE) Name
   (DONE) BinOp, (DONE) UnaryOp
-  BoolOp, Compare
+  (DONE) BoolOp, (DONE) Compare
   (DONE) Call
   (?) Attribute
 
 Statements
-  (DONE ?) Expr
-  Assign
+  (DONE) Expr
+  (DONE) Assign
   If
   While
 
-- fix sanitizer combination
-- add sanitizers to Labels
-- handle sinks ?
+- handle sinks
 - use proposed classes/data types
+- add control flow (If, While)
 '''
 
 pattern = Pattern("SQL Injection", ["dangerous", "request"], ["sanitize"], ["query", "sink"])
@@ -33,6 +33,9 @@ def assignment(node) -> None:
   1. Evaluates the right side
   2. Combines its Labels (sources and sanitizers)
   3. Affects the target variable(s) Label(s)
+
+  "Explicit Illegal Information Flow" is detected when:
+    we assign a Label with Pattern.source to a Pattern.sink  
   '''
 
   print("Assignment to:", node["targets"][0]["id"])
@@ -42,7 +45,11 @@ def assignment(node) -> None:
     varname = target["id"]
     # Reset Label for variable on Assignment
     variables_labels[varname] = Label()
-      
+
+    if pattern.type_of(varname) == Type.SINK and pattern.sources.intersection(value.get_sources()):
+      # TODO don't throw
+      raise Exception(f"Explicit Illegal Information Flow to {varname}")
+
     # Update variable label
     variables_labels[varname] = _combineLabels(variables_labels[varname], value)
 
@@ -91,6 +98,11 @@ def function_call(node) -> Label | None:
     # If this function was a SANITIZER it would remove all the sources on the Labels of the function arguments
     for arg in node["args"]:
       final_label = _combineLabels(final_label, analyze_node(arg))
+
+    print("FUNC", function_name, pattern.sources)
+    if pattern.type_of(function_name) == Type.SINK and pattern.sources.intersection(final_label.get_sources()):
+      # TODO don't throw
+      raise Exception(f"Explicit Illegal Information Flow to {function_name}")
 
   return final_label
 

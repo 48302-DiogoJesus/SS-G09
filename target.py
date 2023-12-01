@@ -29,6 +29,7 @@ a = 4 + add(b, a)
 # Sink Call
 query(a)
 
+'''
 a = retrieve_uname(request)
 # a = dangerous
 a += sanitize(a)
@@ -36,3 +37,4 @@ a += sanitize(a)
 # Sink Assignment
 sink = a
 query(a)
+'''
