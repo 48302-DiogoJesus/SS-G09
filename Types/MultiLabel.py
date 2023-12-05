@@ -27,7 +27,7 @@ class MultiLabel:
 
     def get_sources(self, pattern_name):
         if pattern_name in self.labels:
-            return self.labels[pattern_name].get_sources()
+            return self.labels[pattern_name].get_sources_and_sanitizers()
         return set()
 
     def get_sanitizers(self, pattern_name):

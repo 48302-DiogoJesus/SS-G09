@@ -22,7 +22,11 @@ Statements
 
 - handle sinks
 - use proposed classes/data types
+  MultiLabel: 1 var has 1 Multilabel, with 1 Label per Pattern
+  Policy: Store Illegal Flows
 - add control flow (If, While)
+
+- one function to analyse Statements, another to analyse Expressions
 '''
 
 pattern = Pattern("SQL Injection", ["dangerous", "request"], ["sanitize"], ["query", "sink"])
@@ -46,7 +50,7 @@ def assignment(node) -> None:
     # Reset Label for variable on Assignment
     variables_labels[varname] = Label()
 
-    if pattern.type_of(varname) == Type.SINK and pattern.sources.intersection(value.get_sources()):
+    if pattern.type_of(varname) == Type.SINK and pattern.sources.intersection(value.get_sources_and_sanitizers()):
       # TODO don't throw
       raise Exception(f"Explicit Illegal Information Flow to {varname}")
 
@@ -100,7 +104,7 @@ def function_call(node) -> Label | None:
       final_label = _combineLabels(final_label, analyze_node(arg))
 
     print("FUNC", function_name, pattern.sources)
-    if pattern.type_of(function_name) == Type.SINK and pattern.sources.intersection(final_label.get_sources()):
+    if pattern.type_of(function_name) == Type.SINK and pattern.sources.intersection(final_label.get_sources_and_sanitizers()):
       # TODO don't throw
       raise Exception(f"Explicit Illegal Information Flow to {function_name}")
 
@@ -192,4 +196,4 @@ if __name__ == "__main__":
 
   print()
   for key, value in variables_labels.items():
-    print(key, ": ", value.get_sources(), value.get_sanitizers())
+    print(key, ": ", value.get_sources_and_sanitizers(), value.get_sanitizers())
